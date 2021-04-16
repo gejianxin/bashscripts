@@ -1,0 +1,489 @@
+* interface tweaks
+#+BEGIN_SRC emacs-lisp :tangle yes
+;;关闭烦人的出错时的提示声
+(setq visible-bell t)
+
+;;关闭emacs启动时的画面
+(setq inhibit-startup-message t)
+
+;;关闭gnus启动时的画面
+(setq gnus-inhibit-startup-message t)
+
+;;改变 Emacs 固执的要你回答 yes 的行为。按 y 或空格键表示 yes，n 表示 no。
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;;取消滚动栏、工具栏、菜单栏
+(scroll-bar-mode 0)
+(tool-bar-mode 0)
+(menu-bar-mode t)
+
+;;缓冲区下端详情显示列号、行号
+(column-number-mode)
+(line-number-mode)
+(global-linum-mode)
+
+;;不用 TAB 字符来indent, 这会引起很多奇怪的错误。编辑 Makefile 的时候也不用担心，因为 makefile-mode 会把 TAB 键设置成真正的 TAB 字符，并且加亮显示的。
+(setq-default indent-tabs-mode nil)
+(setq default-tab-width 4)
+(setq tab-stop-list ())
+
+;;设置sentence-end可以识别中文标点。不用在fill时在句号后插入两个空格。
+(setq sentence-end "\\([。！？]\\|……\\|[.?!][]\"')}]*\\($\\|[ \t]\\)\\)[ \t\n]*")
+(setq sentence-end-double-space nil)
+
+;;在标题栏显示buffer的名字。
+(setq frame-title-format "%f@%b")
+
+;; allow recursive editing in minibuffer
+(setq enable-recursive-minibuffers t)
+
+;;高亮当前所在行，会覆盖当前行的语法高亮，可根据需要打开
+;;(global-hl-line-mode)
+
+;;打开括号匹配显示模式
+;;括号匹配时可以高亮显示另外一边的括号，但光标不会烦人的跳到另一个括号处。
+(show-paren-mode)
+(setq show-paren-style 'parenthesis)
+
+;;让 Emacs 可以直接打开和显示图片。
+(auto-image-file-mode)
+
+;;打开压缩文件时自动解压缩。
+(auto-compression-mode)
+
+;;允许emacs和外部其他程序的粘贴
+(setq x-select-enable-clipboard t)
+
+;;使用鼠标中键可以粘贴
+(setq mouse-yank-at-point t)
+
+;;设定不产生备份文件
+(setq make-backup-files nil)
+;;不需要而不是想换个地方保存备份文件
+(setq version-control 'never)
+;;自动保存模式
+(setq auto-save-mode nil)
+
+;;设置home键指向buffer开头，end键指向buffer结尾
+(global-set-key [home] 'beginning-of-buffer)
+(global-set-key [end] 'end-of-buffer)
+
+(global-set-key (kbd "<f5>") 'revert-buffer)
+
+(add-hook 'mu4e-compose-mode-hook 'turn-on-flyspell)
+#+END_SRC
+
+* Load other files
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun load-if-exists (f)
+  "load the elisp file only if it exists and is readable"
+  (if (file-readable-p f)
+    (load-file f)))
+#+END_SRC
+
+* default directory
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; Linux设置打开文件的缺省路径
+(setq default-directory "~/project")
+(setq org-directory "~/project/org")
+(setq music-directory "~/音乐")
+
+(custom-set-variables
+  ;; custom-set-variables was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+  '(custom-enabled-themes (quote (wheatgrass)))
+  '(initial-buffer-choice default-directory)
+  '(initial-frame-alist (quote ((fullscreen . maximized))))
+  '(initial-major-mode (quote org-mode))
+  '(initial-scratch-message ""))
+#+END_SRC
+
+* try
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package try)
+#+END_SRC
+
+* which key
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package which-key
+  :config (which-key-mode))
+#+END_SRC
+
+* Org mode
+
+** universal basic setup for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(setenv "BROWSER" "chrome")
+(add-to-list 'auto-mode-alist '("\\.org" . org-mode))
+;;(add-hook 'org-mode-hook 'turn-on-flyspell)
+(require 'org-tempo)
+(setq org-use-speed-commands t)
+
+(custom-set-variables
+  '(org-default-notes-file (concat org-directory "/note/notes.org"))
+  '(org-export-html-postamble nil)
+  '(org-hide-leading-stars t)
+  '(org-startup-folded (quote overview))
+  '(org-startup-indented t))
+
+(setq org-todo-keywords
+  '((sequence "INBOX(i!)" "NEXT(n)" "DELEGATION(g@/!)" "SOMEDAY(s)" "|" "DONE(d@/!)" "ABORT(a@/!)")))
+#+END_SRC
+
+** pretty bullet icon for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package org-bullets
+  :init
+    (setq org-bullets-bullet-list
+      '("◉" "◎" "○" "◆" "◈" "◇"))
+  :config
+    (setcdr org-bullets-bullet-map nil)
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode t))))
+#+END_SRC
+
+** universal keybindings for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cb" 'org-iswitchb)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-cl" 'org-store-link)
+
+(org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (ruby . t)
+    (dot . t)
+    (ditaa . t)
+    (python . t)
+    (shell . t)
+    (C . t)
+    (java . t)
+    (latex . t)
+    (plantuml . t)
+    (R . t)
+    (processing . t)
+    (sql . t)))
+#+END_SRC
+
+** flash card for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(require 'org-drill)
+(require 'org-drill-table)
+#+END_SRC
+
+** wordpress for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package org2blog
+  :config (progn
+    (require 'org2blog-autoloads)
+    (setq org2blog/wp-blog-alist
+      '(("wordpress"
+        :url "https://$ORG2BLOG_URL_PREFIX.wordpress.com/xmlrpc.php"
+        :username "$WORDPRESS_USERNAME"
+        :password "$WORDPRESS_PASSWORD"
+        :default-title ""
+        :default-categories ("未分类")
+        :tags-as-categories nil)))
+    (setq org2blog/wp-buffer-template
+      "#+TITLE: %s\n#+AUTHOR: %s\n#+DATE: %s\n#+POSTID: %s\n#+PERMALINK: %s\n#+OPTIONS: toc:nil num:nil todo:nil pri:nil tags:nil ^:nil\n#+CATEGORY: %s\n#+TAGS:\n#+DESCRIPTION:\n\n")
+    (defun org2blog/wp-format-buffer-with-author
+      (buffer-template)
+      "Default buffer formatting function."
+      (format buffer-template
+        ;; TITLE
+        (or (plist-get (cdr org2blog/wp-blog) :default-title)
+          org2blog/wp-default-title
+          (read-string "请输入POST标题:"))
+        ;; AUTHOR
+        "$ORG_AUTHOR"
+        ;; DATE
+        (format-time-string "[%Y-%m-%d %a %H:%M]" (current-time))
+        ;; POSTID
+        ""
+        ;; PERMALINK
+        ""
+        ;; CATEGORY
+        (mapconcat
+          (lambda (cat) cat)
+          (or (plist-get (cdr org2blog/wp-blog) :default-categories)
+            org2blog/wp-default-categories)
+              ", ")))
+    (setq org2blog/wp-buffer-format-function
+      'org2blog/wp-format-buffer-with-author)))
+#+END_SRC
+
+** quick notes taking and collecting for org mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(setq org-capture-templates
+  '(("t" "Todo" entry
+      (file+headline (concat org-directory "/GTD/gtd.org") "INBOX")
+        "* %i%?\n   %a"
+      :prepend t)
+    ("r" "Read" entry
+      (file (concat org-directory "/GTD/read.org"))
+        "* %i%?\n %a"
+        :prepend t)
+    ("n" "Notes" plain
+      (file (concat org-directory "/note/notes.org"))
+        "* %i%?\n:PROPERTIES:\n:TITLE: \n:AUTHOR: $ORG_AUTHOR\n:DATE: %U\n:PERMALINK: %a\n:CATEGORY: \n:TAGS: \n:END:"
+        :prepend t)
+    ("i" "Ideas" entry
+      (file+headline (concat org-directory "/GTD/ideas.org") "IDEAS")
+        "* %i%?\n %a"
+        :prepend t)
+    ("p" "Projects" entry
+      (file (concat org-directory "/GTD/projects.org"))
+        "* %i%?\n %a"
+        :prepend t)
+    ("j" "Journal" entry
+      (file+datetree (concat org-directory "/note/journal.org"))
+        "* %i%?\n:PROPERTIES:\n:TITLE: \n:AUTHOR: $ORG_AUTHOR\n:DATE: %U\n:PERMALINK: %a\n:CATEGORY: \n:TAGS: \n:END:"
+        :prepend t)
+    ("l" "Learning" entry
+      (file (concat org-directory "/note/learning.org"))
+        "* %i%?   :drill:\n:PROPERTIES:\n:DRILL_CARD_TYPE: twosided multisided hide1cloze show1cloze\n:END:"
+        :prepend t)))
+
+(defadvice org-capture-finalize
+  (after delete-capture-frame activate)
+  "Advise capture-finalize to close the frame"
+  (if (equal "capture" (frame-parameter nil 'name))  
+    (delete-frame)))
+
+(defadvice org-capture-destroy
+  (after delete-capture-frame activate)
+  "Advise capture-destroy to close the frame"
+  (if (equal "capture" (frame-parameter nil 'name))
+    (delete-frame)))
+
+#+END_SRC
+
+** presentation for org-mode, using reveal.js
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package htmlize)
+#+END_SRC
+
+* ace windows for easy window switching
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package ace-window
+  :init (progn
+    (setq aw-scope 'frame)
+    (global-set-key (kbd "C-x o") 'ace-window)
+    (custom-set-faces
+      '(aw-leading-char-face
+        ((t (:inherit ace-jump-face-foreground :height 3.0)))))))
+#+END_SRC
+
+* Swiper / Ivy / Counsel
+
+Swiper gives us a really efficient incremental search with regular expressions and Ivy / Counsel replace a lot of ido or helms completion functionality
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package counsel
+  :bind
+    (("M-y" . counsel-yank-pop)
+      :map ivy-minibuffer-map
+      ("M-y" . ivy-next-line)))
+
+(use-package ivy
+  :diminish (ivy-mode)
+  :bind (("C-x b" . ivy-switch-buffer))
+  :config
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-display-style 'fancy))
+
+(use-package swiper
+  :bind
+    (("C-s" . swiper)
+     ("C-r" . swiper)
+     ("C-c C-r" . ivy-resume)
+     ("M-x" . counsel-M-x)
+     ("C-x C-f" . counsel-find-file))
+  :config (progn
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-display-style 'fancy)
+    (define-key read-expression-map (kbd "C-r") 'counsel-expression-history)))
+#+END_SRC
+
+* Avy - navigate by searching for a letter on the screen and jumping to it
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package avy
+  :bind
+    ("M-s" . avy-goto-word-1))
+#+END_SRC
+
+* Autocomplete
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package auto-complete
+  :init (progn
+    (ac-config-default)
+    (global-auto-complete-mode t)))
+#+END_SRC
+
+* Flycheck
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package flycheck
+  :config (global-flycheck-mode t))
+#+END_SRC
+
+* Python
+#+BEGIN_SRC emacs-lisp :tangle yes
+(setq py-python-command "python3")
+(setq python-shell-interpreter "python3")
+
+(use-package jedi
+  :init
+    (add-hook 'python-mode-hook 'jedi:setup))
+(use-package elpy
+  :config (progn
+    (setq python-shell-interpreter "jupyter"
+          python-shell-interpreter-args "console --simple-prompt"
+          python-shell-prompt-detect-failure-warning nil)
+    (add-to-list 'python-shell-completion-native-disabled-interpreters "jupyter")))
+
+(use-package py-autopep8
+	:config (progn
+		(require 'py-autopep8)
+		(add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
+))
+
+(use-package ein
+  :config (progn
+    (require 'ein)
+    (add-hook 'ein:connect-mode-hook 'ein:jedi-setup)
+    (setq ein:use-auto-complete t)
+    (setq ein:use-smartrep t)))
+#+END_SRC
+
+* Yasnippet
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package yasnippet
+  :init (yas-global-mode t))
+#+END_SRC
+
+* Web Mode
+(use-package web-mode
+  :config
+    (add-to-list 'auto-mode-alist '("\\.html?\\'" . web-mode))
+    (add-to-list 'auto-mode-alist '("\\.vue?\\'" . web-mode))
+    (setq web-mode-engines-alist '(("django"    . "\\.html\\'")))
+    (setq web-mode-ac-sources-alist '(("css" . (ac-source-css-property))
+    ("vue" . (ac-source-words-in-buffer ac-source-abbrev))
+    ("html" . (ac-source-words-in-buffer ac-source-abbrev))))
+    (setq web-mode-enable-auto-closing t))
+(setq web-mode-enable-auto-quoting t) ;;this fixes the quote problem
+#+END_SRC
+
+* projectile
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package projectile
+  :config
+    (projectile-global-mode)
+    (setq projectile-completion-system 'ivy))
+#+END_SRC
+
+* smartparens
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package smartparens
+  :config
+    (require 'smartparens-config))
+#+END_SRC
+
+* magit
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package magit
+  :bind ("C-x g" . magit-status))
+#+END_SRC
+
+* font scaling
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package default-text-scale
+  :config
+    (global-set-key (kbd "C-M-=") 'default-text-scale-increase)
+    (global-set-key (kbd "C-M--") 'default-text-scale-decrease))
+#+END_SRC
+
+* ibuffer
+#+BEGIN_SRC emacs-lisp :tangle yes
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+
+(setq ibuffer-saved-filter-groups
+  (quote (("default"
+  ("dired" (mode . dired-mode))
+  ("org" (name . "^.*org$"))
+  ("web" (or (mode . web-mode) (mode . js2-mode)))
+  ("shell" (or (mode . eshell-mode) (mode . shell-mode)))
+  ("programming" (or
+    (mode . python-mode)
+    (mode . c++-mode)))
+  ("emacs" (or
+    (name . "^\\*scratch\\*$")
+    (name . "^\\*Messages\\*$")))))))
+
+(add-hook 'ibuffer-mode-hook
+  (lambda ()
+    (ibuffer-switch-to-saved-filter-groups "default")))
+#+END_SRC
+
+* lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package slime
+  :config
+    (require 'slime-autoloads)
+    (setq inferior-lisp-program "sbcl")
+    (setq slime-contribs '(slime-fancy)))
+#+END_SRC
+
+* multiple cursors
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package multiple-cursors
+  :config
+    (require 'multiple-cursors)
+    ;;When you have an active region that spans multiple lines, the following will add a cursor to each line:
+    (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+    ;;When you want to add multiple cursors not based on continuous lines, but based on keywords in the buffer, use:
+    (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+    (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+    (global-set-key (kbd "C-c C-,") 'mc/mark-all-like-this)
+    (global-set-key (kbd "C-c C-.") 'mc/mark-all-in-region-regexp))
+#+END_SRC
+
+* multi media player
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package emms
+  :init (progn
+  )
+  :config (progn
+    (require 'emms-setup)
+    (require 'emms-player-mplayer)
+    (emms-all)
+    (emms-default-players)
+    (setq emms-source-file-default-directory music-directory)))
+#+END_SRC
+
+* R
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package julia-mode
+  :config (require 'julia-mode))
+(use-package ess
+  :config (progn
+    (require 'ess-site)
+))
+#+END_SRC
+
+* utf-8
+
+From http://www.wisdomandwonder.com/wordpress/wp-content/uploads/2014/03/C3F.html
+#+BEGIN_SRC emacs-lisp :tangle yes
+;;指定新建buffer的默认编码为utf-8
+(setq default-buffer-file-coding-system 'utf-8)
+
+;;将utf-8放到编码顺序表的最开始，即先从utf-8开始识别编码，此命令可以多次使用，后指定的编码先探测  
+(prefer-coding-system 'utf-8)
+
+(when (display-graphic-p)
+  (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING)))
+#+END_SRC

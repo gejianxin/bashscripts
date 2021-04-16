@@ -1,11 +1,4 @@
 #!/bin/bash
-
-# This script is to download m3u8 format stream video
-# How to run?
-# ./streamVideoDownload.sh [linkfile]
-# Each line in link file should be like "link [TAB] output"
-# link is the url of the m3u8 file
-# output is the file name of the download file, no extention needed.
 OLDIFS=$IFS
 IFS=$'\n'
 ADDR=`cat $1`
